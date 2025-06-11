@@ -1,0 +1,16 @@
+{
+  "name": "dir-detective",
+  "version": "1.0.0",
+  "description": "Watch file in directory",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "navendrata",
+  "license": "ISC",
+  "dependencies": {
+		"chokidar": "^4.0.3",
+		"node-notifier": "^10.0.1",
+		"sound-play": "^1.1.0"
+	}
+}
