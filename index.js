@@ -35,7 +35,7 @@ const APP_ICON_PATH = fs.existsSync(path.resolve(__dirname, config.appIconPath))
 const resolvedPath = path.resolve(FOLDER_TO_WATCH);
 
 // Log Setup
-const LOG_FOLDER = path.resolve(__dirname, config.logFolder || "../logs");
+const LOG_FOLDER = path.resolve(__dirname, config.logFolder || "./logs");
 
 // Ensure the log directory exists
 if (!fs.existsSync(LOG_FOLDER)) {
@@ -95,15 +95,15 @@ const watcher = chokidar.watch(resolvedPath, {
   persistent: true,
   ignoreInitial: true,
 
-  usePolling: true,
+  usePolling: config.watcherSettings.usePolling,
   // Check roughly every 2 seconds.
   interval: 2000,
   binaryInterval: 3000,
 
   // The file size must be stable for 5 seconds before the 'add' event fires.
   awaitWriteFinish: {
-    stabilityThreshold: 5000,
-    pollInterval: 1000, // How often to check for stability once a file is detected
+    stabilityThreshold: config.watcherSettings.stabilityThreshold || 5000,
+    pollInterval: config.watcherSettings.pollingInterval || 1000, // How often to check for stability once a file is detected
   },
 });
 

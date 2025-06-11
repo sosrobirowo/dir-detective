@@ -1,12 +1,12 @@
 {
-  "watchFolder": "E:/NAVEN/#DATA/DEV/TESTFOLDER",
+  "watchFolder": "./TESTFOLDER",
   "extToWatch": ".mxf",
   "soundNotificationPath": "./assets/notification.wav",
   "appIconPath": "./assets/app-icon.png",
   "enableDebugLogging": true,
   "watcherSettings": {
     "usePolling": true,
-    "pollingInterval": 2000,
+    "pollingInterval": 1000,
     "stabilityThreshold": 5000
   }
 }
