@@ -22,7 +22,7 @@ try {
 }
 
 // Resolve paths from the config file relative to the script's location
-const FOLDER_TO_WATCH = path.resolve(__dirname, config.watchFolder);
+const FOLDERS_TO_WATCH = config.watchFolders.map(p => path.resolve(__dirname, p));
 const NOTIFICATION_SOUND_PATH = path.resolve(
   __dirname,
   config.soundNotificationPath
@@ -30,9 +30,6 @@ const NOTIFICATION_SOUND_PATH = path.resolve(
 const APP_ICON_PATH = fs.existsSync(path.resolve(__dirname, config.appIconPath))
   ? path.resolve(__dirname, config.appIconPath)
   : null;
-
-// Resolve the full path to avoid any relative path issues
-const resolvedPath = path.resolve(FOLDER_TO_WATCH);
 
 // Log Setup
 const LOG_FOLDER = path.resolve(__dirname, config.logFolder || "./logs");
@@ -78,19 +75,24 @@ function logToFile(level, message) {
 }
 
 // --- Setup ---
-if (!fs.existsSync(FOLDER_TO_WATCH)) {
-  const msg = `Watch folder not found at: ${FOLDER_TO_WATCH}`;
-  console.error(`[ERROR] ${msg}`);
-  logToFile("ERROR", msg);
-  process.exit(1);
+for (const folder of FOLDERS_TO_WATCH) {
+    if (!fs.existsSync(folder)) {
+        const msg = `Watch folder not found at: ${folder}`;
+        console.error(`[ERROR] ${msg}`);
+        logToFile('ERROR', msg);
+        process.exit(1);
+    }
 }
 
 console.log(`[INFO] Starting watcher...`);
-logToFile("INFO", "Watcher service started.");
-console.log(`[INFO] Target folder: ${FOLDER_TO_WATCH}`);
-logToFile("INFO", `Watching target folder: ${FOLDER_TO_WATCH}`);
+logToFile('INFO', 'Watcher service started.');
+console.log(`[INFO] Monitoring the following folders:`);
+FOLDERS_TO_WATCH.forEach(folder => {
+    console.log(`  - ${folder}`);
+    logToFile('INFO', `Watching target folder: ${folder}`);
+});
 
-const watcher = chokidar.watch(resolvedPath, {
+const watcher = chokidar.watch(FOLDERS_TO_WATCH, {
   ignored: /(^|[\/\\])\../,
   persistent: true,
   ignoreInitial: true,
@@ -107,18 +109,28 @@ const watcher = chokidar.watch(resolvedPath, {
   },
 });
 
+/**
+ * Finds which of the watched base folders a given path belongs to.
+ * @param {string} filePath The full path to the file or directory.
+ * @returns {string|null} The base folder path or null if not found.
+ */
+function getBaseFolder(filePath) {
+    return FOLDERS_TO_WATCH.find(folder => filePath.startsWith(folder)) || null;
+}
+
 // --- Event Listener ---
 watcher.on("add", (filePath) => {
   if (filePath.toLowerCase().endsWith(config.extToWatch)) {
     const logMessage = `New file is stable and ready: ${filePath}`;
     console.log(`[FILE READY] ${logMessage}`);
-    logToFile("INFO", logMessage);
-
-    const relativePath = path.relative(FOLDER_TO_WATCH, filePath);
+    logToFile('INFO', logMessage);
+    
+    const baseFolder = getBaseFolder(filePath);
+    const relativePath = baseFolder ? path.relative(baseFolder, filePath) : filePath;
 
     notifier.notify({
-      title: "New MXF File Ready!",
-      message: `Path: ${relativePath}`,
+      title: `New MXF File Ready on ${baseFolder}!`,
+      message: `File: ${relativePath}`,
       icon: APP_ICON_PATH,
       sound: false,
       wait: true,
@@ -138,9 +150,10 @@ watcher.on("add", (filePath) => {
 watcher.on("addDir", (dirPath) => {
   const logMessage = `New directory detected: ${dirPath}`;
   console.log(`[FOLDER ADDED] ${logMessage}`);
-  logToFile("INFO", logMessage);
-
-  const relativePath = path.relative(FOLDER_TO_WATCH, dirPath);
+  logToFile('INFO', logMessage);
+  
+  const baseFolder = getBaseFolder(dirPath);
+  const relativePath = baseFolder ? path.relative(baseFolder, dirPath) : dirPath;
 
   notifier.notify({
     title: "New Folder Created",
